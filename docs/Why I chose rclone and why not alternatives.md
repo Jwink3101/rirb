@@ -46,7 +46,7 @@ To be clear, there are also disadvantages to this approach such as the lack of f
 
 ## Why NOT [forward] incremental (and why reverse is okay!)
 
-The difference between forward and reverse is [discussed here](Reverse Incremental.md).
+The difference between forward and reverse is [discussed here](Reverse%20Incremental.md).
 
 Some tools, such as [duplicity](https://duplicity.gitlab.io/) are \[*forward*\] incremental. That means it does a full backup and then adds to the "chain" with only differences. On it's face, this is fine since, to restore, you restore the full and "replay" the differences. The problem is that as the chain of diffs get long, it becomes (a) inefficient and/or (b) not robust to errors. Even the [duplicity FAQs](https://duplicity.gitlab.io/FAQ.html) say "Keep the number of incrementals for a maximum of one month, then do a full backup" No thanks!
 

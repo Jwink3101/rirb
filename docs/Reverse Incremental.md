@@ -31,7 +31,8 @@ Run 1:              Full-Backup1
 Run 2:                            Full-Backup2
                     Mods0         Mods1
 ...
-Run N:                            Full-Backup2  ... Full-BackupN
+...
+Run N:                                          ... Full-BackupN
                     Mods0         Mods1         ... ModsN-1
 ```
 

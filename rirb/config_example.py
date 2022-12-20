@@ -78,7 +78,9 @@ automatic_dst_list = True
 # and `diffs.json.gz` files get uploaded *BEFORE* the main backup. The `curr.json.gz`
 # and `log.log` get uploaded afterwards. However, to ensure there are no mistakes, the
 # `backed_up_files.json.gz` and `diffs.json.gz` can be prefixed until the backup
-# completes. If this is False, it is still possible to identify incomplete backups by
+# completes.
+#
+# If this is False, it is still possible to identify incomplete backups by
 # the missing log.log file
 prefix_incomplete_backups = True
 

@@ -8,7 +8,7 @@ You should set the lifecycle rules so that files are *eventually* deleted if tha
 
 ## Create safe key
 
-This comments (with a `` `# comment` ``) out the keys but lists them all to make it easier. The full list of keys (last checked, 2022-11-30) is [in the B2 Docs](https://www.backblaze.com/b2/docs/application_keys.html)
+This comments out the keys but lists them all to make it easier. The full list of keys (last checked, 2022-11-30) is [in the B2 Docs](https://www.backblaze.com/b2/docs/application_keys.html)
 
 I do this in Python since it is easier to comment and read but can be done in Bash as well.
 

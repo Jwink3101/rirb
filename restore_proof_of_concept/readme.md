@@ -23,3 +23,8 @@ There are two stategies presented.
 
 Again, this process is not polished or optimized. It is not part of the tool, but the methods are demonstrated
 
+## What can go wrong
+
+The biggest issue will be if there is an interrupted backup in the chain. This means that there will be a `diffs.json.gz` file that does not accurately represent all files in the corresponding backup directory. This will be apparent because there will be no corresponding `log.log` file in the `logs/` top-level directory *and*, at least by default, the `diffs.json.gz` will actually be `INCOMPLETE_BACKUP_diffs.json.gz`. It will have to be manually fixed.
+
+Again, if full restores to a prior state is your desired use case, check out other tools.

@@ -102,7 +102,7 @@ At the top:
     - `log.log` - Log file of the backup. Note that it terminates before the log itself is copied.
 - `back/<dated entries>` - Deleted or modified files from the backup.
 
-Note that, *by design*, the `backed_up_files.json.gz` and `diffs.json.gz` will get written *before* backup and the `curr.json.gz` and `log.log` after. To help identify if the backup failed, they will get prefixed "`INCOMPLETE_BACKUP_`" (but this can be disabled). Regardless, incomplete backups can be identified by the presence of `backed_up_files.json.gz` and `diffs.json.gz` (with or without their prefix) and the lack of `.log.log`
+Note that, *by design*, the `backed_up_files.json.gz` and `diffs.json.gz` will get written *before* backup and the `curr.json.gz` and `log.log` after. To help identify if the backup failed, they will get prefixed "`INCOMPLETE_BACKUP_`" (but this can be disabled). Regardless, incomplete backups can be identified by the presence of `backed_up_files.json.gz` and `diffs.json.gz` (with or without their prefix) and the lack of `log.log`
 
 ## Interrupted Backups
 

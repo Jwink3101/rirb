@@ -16,7 +16,7 @@ setup(
     entry_points={"console_scripts": ["rirb=rirb.cli:cli"],},
     version=rirb.__version__,
     description="Reverse Incremental Rclone Backup",
-    url="https://github.com/Jwink3101/???",
+    url="https://github.com/Jwink3101/rirb/",
     author="Justin Winokur",
     author_email="Jwink3101@@users.noreply.github.com",
     license="MIT",

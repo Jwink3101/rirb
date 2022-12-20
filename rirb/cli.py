@@ -9,13 +9,14 @@ import copy
 
 from . import __version__
 
-_TEMPDIR = False # Just used in testing
+_TEMPDIR = False  # Just used in testing
+
 
 class Log:
     def __init__(self):
         pass
 
-    def _init(self, *, tmpdir, debugmode = False):
+    def _init(self, *, tmpdir, debugmode=False):
         self.tmpdir = tmpdir = Path(tmpdir)
         tmpdir.mkdir(parents=True, exist_ok=True)
 
@@ -65,7 +66,7 @@ class ConfigError(ValueError):
 
 
 class Config:
-    def __init__(self, configpath, debugmode= False):
+    def __init__(self, configpath, debugmode=False):
         self._config = {"_configpath": configpath}
         self.configpath = Path(configpath).resolve()  # make it absolute
 

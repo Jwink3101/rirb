@@ -1,5 +1,11 @@
 # Why I chose rclone/rirb and why not alternatives
 
+## TL/DR
+
+Rclone style reverse-incremental backups (including those from rirb) are not the most efficient, advanced, featurefull, or sophisticated. However, they are **simple, easy to use, easy to understand, and robust**. For backups, that is a great tradeoff.
+
+Also, the ability to backup *to* and *from* any rclone remote is very powerful.
+
 ## Why not block based
 
 The biggest alternative I considered are block-based backup tools such as [restic][restic], [Borg][borg], [duplicacy][duplicacy], [kopia][kopia], [Arq][arq] (I think), and others. They work by splitting the files into block (based on a really cool content-defined chunking algorithm) and backing up the files by blocks. For each backup, they have a database of all of the files and all of the blocks that go into that file. It is "synthetic full backups". You can view every run as a full snapshot. Restoring any snapshot, whether the first or last, is the same.
@@ -20,7 +26,7 @@ They also often have issues around pruning and cleaning old data blobs. Enough s
 
 ## Why not hardlink-based
 
-Hard-link based backups such as Time Machine, rsync (not rclone) with `--link-dest`, and [rsnapshot](https://rsnapshot.org/) are really creative. They are incremenetal in that they only back up new files but they have full snapshots by making cheap "hard links" to the past files (or directories for Time Machine). This means they are very storage efficient but still incremental and full-snapshot. The biggest advantage is that they are 100% native. No software or anything; just a Unix-like (POSIX?) file system! And as it is full snapshots, it is also easy to decide how to prune it long term!
+Hard-link based backups such as Time Machine, rsync (*not** rclone) with `--link-dest`, and [rsnapshot](https://rsnapshot.org/) are really creative. They are incremenetal in that they only back up new files but they have full snapshots by making cheap "hard links" to the past files (or directories for Time Machine). This means they are very storage efficient but still incremental and full-snapshot. The biggest advantage is that they are 100% native. No software or anything; just a Unix-like (POSIX?) file system! And as it is full snapshots, it is also easy to decide how to prune it long term!
 
 However, they need to reside on a file system so object storage or even *most* cloud storages are off limits. And they do not support encryption other than at the filesystem level. They also do not usually track moves or do any kind of deduplication.
 
@@ -40,7 +46,9 @@ To be clear, there are also disadvantages to this approach such as the lack of f
 
 ## Why NOT [forward] incremental (and why reverse is okay!)
 
-Some tools, such as [duplicity](https://duplicity.gitlab.io/) are \[forward\] incremental. That means it does a full backup and then adds to the "chain" with only differences. On it's face, this is fine since, to restore, you restore the full and "replay" the differences. The problem is that as the chain of diffs get long, it becomes (a) inefficient and/or (b) not robust to errors. Even the [duplicity FAQs](https://duplicity.gitlab.io/FAQ.html) say "Keep the number of incrementals for a maximum of one month, then do a full backup" No thanks!
+The difference between forward and reverse is [discussed here](Reverse Incremental.md).
+
+Some tools, such as [duplicity](https://duplicity.gitlab.io/) are \[*forward*\] incremental. That means it does a full backup and then adds to the "chain" with only differences. On it's face, this is fine since, to restore, you restore the full and "replay" the differences. The problem is that as the chain of diffs get long, it becomes (a) inefficient and/or (b) not robust to errors. Even the [duplicity FAQs](https://duplicity.gitlab.io/FAQ.html) say "Keep the number of incrementals for a maximum of one month, then do a full backup" No thanks!
 
 There are advantages to forward incremental if you are writing to immutable media (or immutable cloud storage) but since restore is just so much more complicated, it isn't worth it.
 

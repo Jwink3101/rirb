@@ -14,7 +14,7 @@ for example, if specifying filter files.
 Defaults are sensible for a local source. Change as needed for others.
 
 A few modules, including `os` and `Path = pathlib.Path` are already loaded along
-with `log` and `debug`
+with `log()` and `debug()`
 """
 # Specify the source and destination. if local, no need to specify in
 # reclone remote format
@@ -181,6 +181,6 @@ stop_on_shell_error = False
 # below do not match, it does not mean the run won't work.
 _version = "__VERSION__"
 
-# This is a random string that should be different in every config. It is
-# a BAD IDEA to change it
+# This is a random string that should be different in every config.
+# Changing it could have unintended consequences if a run did not finish.
 _uuid = "__UUID4__"

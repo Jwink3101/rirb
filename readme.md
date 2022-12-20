@@ -41,7 +41,7 @@ The nice thing is, this is **just a helper**. Without it, you still have your ba
 
 Install directly from github:
 
-    $ TODO
+    $ python -m pip install git+https://github.com/Jwink3101/rirb
     
 Then make a config file with `--new`. Set all of your configurations and then run with `--init`.
 
@@ -104,7 +104,7 @@ At the top:
 
 Note that, *by design*, the `backed_up_files.json.gz` and `diffs.json.gz` will get written *before* backup and the `curr.json.gz` and `log.log` after. To help identify if the backup failed, they will get prefixed "`INCOMPLETE_BACKUP_`" (but this can be disabled). Regardless, incomplete backups can be identified by the presence of `backed_up_files.json.gz` and `diffs.json.gz` (with or without their prefix) and the lack of `.log.log`
 
-## Interrupted Backups.
+## Interrupted Backups
 
 If a backup is interrupted during upload but *before* the file list is uploaded, it could leave the backup in a hybrid state where some files updated, deleted, or moved. 
 

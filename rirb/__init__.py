@@ -1,4 +1,4 @@
-__version__ = "20221219.0.BETA"
+__version__ = "20221220.0.BETA"
 
 
 from . import cli

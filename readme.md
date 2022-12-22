@@ -16,7 +16,7 @@ Because it stores diffs and other state information, full point-in-time recovery
 
 The end result should be *very* similar to
 
-    $ rclone sync source: dest:curr --backup-dir dest:back/<date>`
+    $ rclone sync source: dest:curr --backup-dir dest:back/<date>
 
 This is a **HELPER** tool. It is not designed to do *everything* needed for backups. It is aimed at the *intermediate* user (i.e. me) and may still need some modifications and/or manual scritping. Notably, situations *not* covered are:
 

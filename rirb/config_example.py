@@ -171,11 +171,21 @@ log_dest = None
 # The _post_ shell call also has "$STATS" defined which prints the run statistics
 # including timing (which will be different than the final since the logs will not
 # yet have been dumped)
+#
+# Examples of calling other function:
+# post_shell = [python, "-c", 'print("example")'] # or sys.executable instead of "python"
 pre_shell = ""
 post_shell = ""
 
+
 # Specify whether or not to allow an error in the shell commands above to continue
 stop_on_shell_error = False
+
+# If, and only if, the run fails, this will get called. It will not be logged or
+# have any information about the failure however the temporary log, $LOGPATH, and
+# debug log, $DEBUGPATH, could be read if interested. Useful for sending alert of
+# failed run. Same rules as above about being specified as a list
+fail_shell = ""
 
 #######
 # This should only be changed by the user when migrating from an older config

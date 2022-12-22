@@ -2,6 +2,8 @@ import os, sys
 import shutil
 import time, datetime
 from collections import defaultdict
+import subprocess
+from pathlib import Path
 
 from . import log, debug
 from .rclone import Rclone
@@ -10,10 +12,10 @@ from . import utils
 
 class RIRB:
     def __init__(self, config):
-        """
-        Main sync object. If break_lock is not None, will *just* break the
-        locks
-        """
+        self.config = config
+        # We want to be able to initialize it before running in case it fails
+
+    def run(self):
         self.t0 = time.time()
 
         # Use very precise time. Adds some digits but doesn't matter in rclone's crypt
@@ -24,7 +26,7 @@ class RIRB:
             .strftime("%Y-%m-%dT%H%M%S.%f%z")
         )
 
-        self.config = config
+        config = self.config
         self.config.now = self.now  # Set it there to be used elsewhere
         self.logname = f"{self.now}.log"
         log(f"logname: {self.logname}")
@@ -117,12 +119,18 @@ class RIRB:
 
         self.savelog()
 
-    def savelog(self):
-        logdests = [utils.pathjoin(self.rclone.destpath.logs, "log.log")]
+    def savelog(self, fail=False):
+        if fail:
+            failtxt = "FAILED_"
+            logname = str(Path(self.logname).with_suffix(".FAILED.log"))
+        else:
+            failtxt = ""
+            logname = self.logname
+        logdests = [utils.pathjoin(self.rclone.destpath.logs, f"{failtxt}log.log")]
         if self.config.log_dest:
             if isinstance(self.config.log_dest, str):
                 self.config.log_dest = [self.config.log_dest]
-            joined = (utils.pathjoin(d, self.logname) for d in self.config.log_dest)
+            joined = (utils.pathjoin(d, logname) for d in self.config.log_dest)
             logdests.extend(joined)
 
         debug(f"{logdests =}")
@@ -286,7 +294,6 @@ class RIRB:
 
     def run_shell(self, *, mode, stats=""):
         """Run the shell commands"""
-        import subprocess
 
         dry = self.config.cliconfig.dry_run
 
@@ -295,42 +302,52 @@ class RIRB:
         elif mode == "post":
             cmds = self.config.post_shell
 
+        log("")
+        log("Running shell commands")
         if not cmds:
             return
 
-        log("")
-        log("Running shell commands")
-        prefix = "DRY RUN " if dry else ""
-        if isinstance(cmds, str):
-            for line in cmds.rstrip().split("\n"):
-                log(f"{prefix}$ {line}")
-            shell = True
-        else:
-            log(f"{prefix}{cmds}")
-            shell = False
+        returncode = shell_runner(cmds, dry=dry, env={"STATS": stats})
 
-        if dry:
-            return log("DRY-RUN: Not running")
+        if returncode and self.config.stop_on_shell_error:
+            raise subprocess.CalledProcessError(returncode, cmds)
 
-        env = os.environ.copy()
-        env["STATS"] = stats
 
-        proc = subprocess.Popen(
-            cmds, shell=shell, env=env, stderr=subprocess.PIPE, stdout=subprocess.PIPE
-        )
+def shell_runner(cmds, dry=False, env=None):
+    """
+    Run the shell command (string or list) and return the returncode
+    """
+    prefix = "DRY RUN " if dry else ""
+    if isinstance(cmds, str):
+        for line in cmds.rstrip().split("\n"):
+            log(f"{prefix}$ {line}")
+        shell = True
+    else:
+        log(f"{prefix}{cmds}")
+        shell = False
 
-        out, err = proc.communicate()
-        out, err = out.decode(), err.decode()
-        for line in out.split("\n"):
-            log(f"STDOUT: {line}")
+    if dry:
+        return log("DRY-RUN: Not running")
 
-        if err.strip():
-            for line in err.split("\n"):
-                log(f"STDERR: {line}")
-        if proc.returncode > 0:
-            log(f"WARNING: Command return non-zero returncode: {proc.returncode}")
-            if self.config.stop_on_shell_error:
-                raise subprocess.CalledProcessError(proc.returncode, cmds)
+    environ = os.environ.copy()
+    if env:
+        environ.update(env)
+
+    proc = subprocess.Popen(
+        cmds, shell=shell, env=environ, stderr=subprocess.PIPE, stdout=subprocess.PIPE
+    )
+
+    out, err = proc.communicate()
+    out, err = out.decode(), err.decode()
+    for line in out.split("\n"):
+        log(f"STDOUT: {line}")
+
+    if err.strip():
+        for line in err.split("\n"):
+            log(f"STDERR: {line}")
+    if proc.returncode > 0:
+        log(f"WARNING: Command return non-zero returncode: {proc.returncode}")
+    return proc.returncode
 
 
 class NoCommonHashError(ValueError):

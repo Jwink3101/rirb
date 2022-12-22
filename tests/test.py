@@ -256,8 +256,9 @@ def test_automatic_dst_list_and_prefix():
     }
     # test filelist prefixes
     assert set(os.listdir(test.log_dirs()[-1])) == {
-        "INCOMPLETE_BACKUP_diffs.json.gz",
         "INCOMPLETE_BACKUP_backed_up_files.json.gz",
+        "INCOMPLETE_BACKUP_diffs.json.gz",
+        "FAILED_log.log",
     }
 
     # ... then run it again. It *should* now use --dst-list AUTOMATICALLY
@@ -289,6 +290,7 @@ def test_automatic_dst_list_and_prefix():
     assert set(os.listdir(test.log_dirs()[-1])) == {
         "diffs.json.gz",
         "backed_up_files.json.gz",
+        "FAILED_log.log",
     }
 
     # Now this should (a) raise a warning and (b) not delete the errant file
@@ -395,6 +397,14 @@ def test_shell():
     test = testutils.Tester(name="shell")
     test.config["pre_shell"] = """echo "PRE"\necho "PRE" > shell\n exit 4"""
     test.config["post_shell"] = """echo "POST"\necho "POST" >> shell\necho "$STATS" """
+    test.config["fail_shell"] = "\n".join(
+        [
+            'echo "FAIL"',
+            'echo "FAIL" >> shell',
+            'echo LOGS "$LOGPATH"',
+            'echo DEBUG "$DEBUGPATH"',
+        ]
+    )
     test.config["stop_on_shell_error"] = False
     test.write_config()
 
@@ -402,7 +412,6 @@ def test_shell():
     test.cli("--init", "config.py")
 
     log = test.logs[-1][0]
-
     for txt in [
         "STDOUT: PRE",
         '$ echo "PRE"',
@@ -425,6 +434,28 @@ def test_shell():
         assert False  # Should not have gotten here
     except subprocess.CalledProcessError:
         pass
+
+    assert Path("shell").read_text().strip() == "PRE\nFAIL", "did not call fail_shell"
+    logdir = Path(test.log_dirs()[-1])
+    failed_log = logdir / "FAILED_log.log"
+    assert failed_log.exists()  # implied below but nice to see
+    assert "Attempting to upload logs. May fail" in failed_log.read_text()
+
+    # One more with a list as the shell
+    test.config["pre_shell"] = ["echo", "pre list"]
+    test.config["post_shell"] = [sys.executable, "-c", 'print("post list")']
+    test.write_config()
+
+    test.write_pre("src/file.txt", "file..")
+    test.cli("config.py")
+    log = test.logs[-1][0]
+    for txt in [
+        "['echo', 'pre list']",
+        "STDOUT: pre list",
+        """'-c', 'print("post list")']""",
+        "STDOUT: post list",
+    ]:
+        assert txt in log
 
 
 def test_dry_run():
@@ -640,14 +671,14 @@ def test_links(webdav):
 
 
 if __name__ == "__main__":
-    test_main()
+    # test_main()
     # test_missing_local_list()
     # for attrib in ("size", "mtime", "hash", "fail-hash", None):
     #     test_dst_list(attrib)
     # test_automatic_dst_list_and_prefix()
     # test_move_attribs()
     # test_log_dests()
-    # test_shell()
+    test_shell()
     # test_dry_run()
     # for mode in [True, False, "auto"]:
     #     test_dir_cleanup(mode)

@@ -237,7 +237,7 @@ class Config:
 
 
 def cli(argv=None):
-    from .main import RIRB
+    from .main import RIRB, shell_runner
 
     parser = argparse.ArgumentParser(
         description="Reverse Incremental Rclone Backup (rirb)",
@@ -326,6 +326,7 @@ def cli(argv=None):
         debug(f"{cliconfig = }")
 
         rirb = RIRB(config)
+        rirb.run()
 
         # Delete the tempdir. This is ONLY done if run successfully!
         if not _TEMPDIR:  #  Do not do it while testing
@@ -336,9 +337,21 @@ def cli(argv=None):
     except Exception as E:
         log("ERROR: " + str(E), file=sys.stderr)
         log(
-            f"ERROR Occured. See logs (including debug) at {config.tmpdir}",
+            f"ERROR Occured. See logs (including debug) at {repr(str(config.tmpdir.resolve()))}",
             file=sys.stderr,
         )
+
+        # Call fail_shell
+        if config.fail_shell:
+            log("Running 'fail_shell' commands. Note: May not get logged")
+            env = {
+                "LOGPATH": str(log.log_file.resolve()),
+                "DEBUGPATH": str(log.debug_file.resolve()),
+            }
+            shell_runner(config.fail_shell, dry=config.cliconfig.dry_run, env=env)
+
+        log("Attempting to upload logs. May fail")
+        rirb.savelog(fail=True)
 
         if cliconfig.debug:
             raise

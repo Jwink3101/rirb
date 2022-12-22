@@ -12,6 +12,8 @@ but is faster since it stores the previous backup listing. It also keeps some ad
 
 Because it stores diffs and other state information, full point-in-time recovery is possible, though that is *not* the indended use and can break. See [Restore Proof of Concept](restore_proof_of_concept/readme.md).
 
+Backups with rclone and/or rirb are not the most efficient, advanced, fast, featurefull, complete, sexy, or sophisticated. However, they are **simple, easy to use, easy to understand, easy to verify, easy to restore, and robust**. For backups, that is a great tradeoff.
+
 ## Overall philosophy:
 
 The end result should be *very* similar to

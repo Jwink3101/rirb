@@ -2,13 +2,13 @@
 
 ## TL/DR
 
-Rclone style reverse-incremental backups (including those from rirb) are not the most efficient, advanced, featurefull, or sophisticated. However, they are **simple, easy to use, easy to understand, and robust**. For backups, that is a great tradeoff.
+Backups with rclone and/or rirb are not the most efficient, advanced, fast, featurefull, complete, sexy, or sophisticated. However, they are **simple, easy to use, easy to understand, easy to verify, easy to restore, and robust**. For backups, that is a great tradeoff.
 
 Also, the ability to backup *to* and *from* any rclone remote is very powerful.
 
 ## Why not block based
 
-The biggest alternative I considered are block-based backup tools such as [restic][restic], [Borg][borg], [duplicacy][duplicacy], [kopia][kopia], [Arq][arq] (I think), and others. They work by splitting the files into block (based on a really cool content-defined chunking algorithm) and backing up the files by blocks. For each backup, they have a database of all of the files and all of the blocks that go into that file. It is "synthetic full backups". You can view every run as a full snapshot. Restoring any snapshot, whether the first or last, is the same.
+The biggest alternative I considered are block-based backup tools such as [restic][restic], [Borg][borg], [duplicacy][duplicacy], [kopia][kopia], [Arq][arq] (I think), and others. They work by splitting the files into block (based on a really cool content-defined chunking algorithm) and backing up blocks. For each backup, they have a database of all of the files and all of the blocks that go into that file. It is "synthetic full backups". You can view every run as a full snapshot. Restoring any snapshot, whether the first or last, is the same.
 
 [restic]:https://restic.net/
 [borg]: https://www.borgbackup.org/
@@ -16,17 +16,17 @@ The biggest alternative I considered are block-based backup tools such as [resti
 [kopia]:https://kopia.io/
 [arq]:https://www.arqbackup.com/
 
-What is so great about them is that they deduplicate between all files and across all versions. And they do this *implicitly* too! If you modify a small bit of a large file, only that block gets backup. If you move a file, it will get rechunked and then not have to upload or store it again. Same if you move it *and* modify it. It is all implicit and automatic. And as it is full snapshots, it is also easy to decide how to prune it long term! 
+What is so great about them is that they deduplicate *within* all files and across all versions. And they do this *implicitly* too! If you modify a small bit of a large file, only that block gets backed up. If you move a file, it will get rechunked and then not have to upload or store it again. Same if you move it *and* modify it. It is all implicit and automatic. And as it is full snapshots, it is also easy to decide how to prune it long term! 
 
 They also present (generally speaking) the filesystem as a *full snapshot*. So when you go to restore, it is the full system as it stood when it was backed up.
 
-The dissadvantages? The biggest is that they require their software to recover and you cannot really do any introspection on the backup without it. Since all that is stored is blobs of data and the final database, it can be hard to do anything with it. Also, if you were to, say, order a recovery drive, you can't easily select which files you want. And if the database gets correupted, you are out of luck.
+The dissadvantages? The biggest is that they require their software to recover and you cannot really do any introspection on the backup without it. Also, if you were to, say, order a recovery drive, you can't easily select which files you want. And if the database gets correupted, you are out of luck. The entire approach comes at the cost of complexity
 
-They also often have issues around pruning and cleaning old data blobs. Enough so that I worry about the recovery. And very few offer ways to "rewrite" a backup and remove something you didn't intent to backup (this is a feature as well as a bug!)
+They also often have issues around pruning and cleaning old data blobs. Enough so that I worry about the recovery. And very few offer a way to selectively delete backed up files. This is a feature as well as a bug depending on how you look at it.
 
 ## Why not hardlink-based
 
-Hard-link based backups such as Time Machine, rsync (*not** rclone) with `--link-dest`, and [rsnapshot](https://rsnapshot.org/) are really creative. They are incremenetal in that they only back up new files but they have full snapshots by making cheap "hard links" to the past files (or directories for Time Machine). This means they are very storage efficient but still incremental and full-snapshot. The biggest advantage is that they are 100% native. No software or anything; just a Unix-like (POSIX?) file system! And as it is full snapshots, it is also easy to decide how to prune it long term!
+Hard-link based backups such as Time Machine, rsync (*not* rclone) with `--link-dest`, and [rsnapshot](https://rsnapshot.org/) are really creative. They are incremenetal in that they only back up new files but they have full snapshots by making cheap "hard links" to the past files (or directories for Time Machine). This means they are very storage efficient but still incremental and full-snapshot. The biggest advantage is that they are 100% native. No software or anything; just a file system! And as it is full snapshots, it is also easy to decide how to prune it long term! You can also selectively delete backed up files.
 
 However, they need to reside on a file system so object storage or even *most* cloud storages are off limits. And they do not support encryption other than at the filesystem level. They also do not usually track moves or do any kind of deduplication.
 
@@ -38,7 +38,7 @@ However, they need to reside on a file system so object storage or even *most* c
 
 This is great because it is easy. 1:1 file on source to file on destination. This makes recovery easy and not dependant on rclone (except for decryption if used). It is also simple which is a major benefit for backups. You can use any rclone support storage as the destination (or even the source).
 
-Moves can be tracked (though there are caveats and issues depending on setup) but there is no other deduplication. This approach also does *not* present full snapshots. If you accidentally delete files, they can be found. And it is easy to restore the *latest* but it is hard to restore to a point-in-time. I keep the hashes and filelists so it can be scripted but it is not easy! Also, you can prune by deleted backups you don't need but you cannot do something like say "keep 1 backup per week".
+Moves can be tracked (though there are caveats and issues depending on setup) but there is no other deduplication. This approach also does *not* present full snapshots. If you accidentally delete files, they can be found. And it is easy to restore the *latest* but it is hard to restore to a point-in-time (though can be done under ideal conditions). You can prune away the oldest backups but you wouldn't want to prune *between* backups. You can also selectively delete backed up files.
 
 Another advantage is that you can mount the backup from cloud storage and use it for serving! You can mount block-based too but they are not designed for serving files. It is not clear how they will perform.
 
@@ -49,6 +49,8 @@ To be clear, there are also disadvantages to this approach such as the lack of f
 The difference between forward and reverse is [discussed here](Reverse%20Incremental.md).
 
 Some tools, such as [duplicity](https://duplicity.gitlab.io/) are \[*forward*\] incremental. That means it does a full backup and then adds to the "chain" with only differences. On it's face, this is fine since, to restore, you restore the full and "replay" the differences. The problem is that as the chain of diffs get long, it becomes (a) inefficient and/or (b) not robust to errors. Even the [duplicity FAQs](https://duplicity.gitlab.io/FAQ.html) say "Keep the number of incrementals for a maximum of one month, then do a full backup" No thanks!
+
+You can't prune though could could selectively delete backed up files (if the tools allow).
 
 There are advantages to forward incremental if you are writing to immutable media (or immutable cloud storage) but since restore is just so much more complicated, it isn't worth it.
 

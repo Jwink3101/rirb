@@ -1,5 +1,7 @@
 import datetime
 import os
+from threading import Thread
+from queue import Queue
 
 from . import log, debug
 
@@ -150,3 +152,36 @@ class Bunch(dict):
     def __repr__(self):
         s = super(Bunch, self).__repr__()
         return "Bunch(**{})".format(s)
+
+
+class ReturnThread(Thread):
+    """
+    Like a regular thread except when you `join`, it returns the function
+    result. And .start() will return itself to enable cleaner code.
+    
+    Note that target is a required keyword argument. This is not inteded
+    to be subclassed like a regular thread
+    """
+
+    def __init__(self, *, target, **kwargs):
+        self.target = target
+        self.q = Queue()
+        super().__init__(target=self._target, **kwargs)
+
+    def start(self, *args, **kwargs):
+        """
+        Same as Thread.start() but returns self to enable things like:     
+            mythread = ReturnThread(...).start()
+        """
+        super().start(*args, **kwargs)
+        return self
+
+    def _target(self, *args, **kwargs):
+        self.q.put(self.target(*args, **kwargs))
+
+    def join(self, **kwargs):
+        super().join(**kwargs)
+        res = self.q.get()
+        self.q.task_done()
+        self.q.join()
+        return res

@@ -575,9 +575,11 @@ class Rclone:
         if stream:
             stdout = subprocess.PIPE
             stderr = subprocess.STDOUT
-        else:  # Stream both stdout and stderr to files to prevent a deadlock
-            stdout = open(f"{config.tmpdir}/stdout", mode="wb")
-            stderr = open(f"{config.tmpdir}/stderr", mode="wb")
+        else:  # Stream to files to prevent a deadlock in the buffer
+            # Random names for concurrent calls. Use random integers 
+            rnd = int.from_bytes(os.urandom(6), "little") 
+            stdout = open(f"{config.tmpdir}/std.{rnd}.out", mode="wb")
+            stderr = open(f"{config.tmpdir}/std.{rnd}.err", mode="wb")
 
         t0 = time.time()
         proc = subprocess.Popen(cmd, stdout=stdout, stderr=stderr, env=env)

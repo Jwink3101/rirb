@@ -8,6 +8,7 @@ from pathlib import Path
 from . import log, debug
 from .rclone import Rclone
 from . import utils
+from .utils import ReturnThread
 
 
 class RIRB:
@@ -48,14 +49,23 @@ class RIRB:
         self.run_shell(mode="pre")
 
         self.loc_prev = self.rclone.pull_prev_list()
-        self.curr = self.rclone.list_source(prev=self.loc_prev)
+
+        # Do this in its own thread so it can run at the same time as --dst-list.
+        # Joined after listing dst
+        cthread = ReturnThread(
+            target=self.rclone.list_source, kwargs=dict(prev=self.loc_prev),
+        ).start()
 
         if config.cliconfig.dst_list:
             log("Using --dst-list")
-            self.prev = self.dst_prev = self.rclone.list_dest()
+            # Do this in its own thread while the above is also running
+            pthread = ReturnThread(target=self.rclone.list_dest).start()
+            self.prev = self.dst_prev = pthread.join()
         else:
             self.prev = self.loc_prev
             self.dst_prev = None
+
+        self.curr = cthread.join()
 
         self.compare()  # sets self.new, self.modified, self.deleted
         self.renames()  # sets self.renamed and updates self.new and self.deleted

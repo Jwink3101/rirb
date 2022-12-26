@@ -5,11 +5,14 @@ from pathlib import Path
 import tempfile
 import argparse
 import shutil
+from threading import Lock
 import copy
 
 from . import __version__
 
 _TEMPDIR = False  # Just used in testing
+
+LOCK = Lock()
 
 
 class Log:
@@ -41,15 +44,16 @@ class Log:
 
         kwargs.pop("file", None)
 
-        if __debug:
-            with open(self.debug_file, mode="at") as fobj:
-                print(t, *args, file=fobj, **kwargs)
-            if self.debugmode:
+        with LOCK:  # Append should be atomic but just in case, lock it along with print
+            if __debug:
+                with open(self.debug_file, mode="at") as fobj:
+                    print(t, *args, file=fobj, **kwargs)
+                if self.debugmode:
+                    print(t, *args, **kwargs)
+            else:
+                with open(self.log_file, mode="at") as fobj:
+                    print(t, *args, file=fobj, **kwargs)
                 print(t, *args, **kwargs)
-        else:
-            with open(self.log_file, mode="at") as fobj:
-                print(t, *args, file=fobj, **kwargs)
-            print(t, *args, **kwargs)
 
     __call__ = log
 

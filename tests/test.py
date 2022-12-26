@@ -673,12 +673,12 @@ def test_links(webdav):
 if __name__ == "__main__":
     # test_main()
     # test_missing_local_list()
-    # for attrib in ("size", "mtime", "hash", "fail-hash", None):
-    #     test_dst_list(attrib)
+    for attrib in ("size", "mtime", "hash", "fail-hash", None):
+        test_dst_list(attrib)
     # test_automatic_dst_list_and_prefix()
     # test_move_attribs()
     # test_log_dests()
-    test_shell()
+    # test_shell()
     # test_dry_run()
     # for mode in [True, False, "auto"]:
     #     test_dir_cleanup(mode)

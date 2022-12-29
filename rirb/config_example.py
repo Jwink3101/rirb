@@ -167,16 +167,17 @@ log_dest = None
 # STDOUT and STDERR will be captured. Note that there is no validation or
 # security of the inputs. These are not actually called if using dry-run.
 #
-# If specified as a list, will run directly with subprocess. Otherwise uses shell=True
-# The _post_ shell call also has "$STATS" defined which prints the run statistics
-# including timing (which will be different than the final since the logs will not
-# yet have been dumped)
+# Can be specified as the following:
 #
-# Examples of calling other function:
-# post_shell = [python, "-c", 'print("example")'] # or sys.executable instead of "python"
+#     string : Run with shell=True in the parent directory to this file.
+#              Can cd as needed and can be multiple lines and multiple commands.
+#     list   : Will execute with shell=False in the parent directory to this file.
+#     dict   : Specify subprocess.Popen flags plus the keyword 'cmd'. YOU decide if
+#              shell should be True or False based on 'cmd'. Will overwrite settings
+#              for std(out/err). Will update current environ with any 'env' settings.
+#
 pre_shell = ""
 post_shell = ""
-
 
 # Specify whether or not to allow an error in the shell commands above to continue
 stop_on_shell_error = False

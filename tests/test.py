@@ -5,6 +5,10 @@ import os, sys
 from pathlib import Path
 import gzip as gz
 import json
+import shutil
+import textwrap
+import re
+
 
 p = os.path.abspath("../")
 if p not in sys.path:
@@ -441,21 +445,49 @@ def test_shell():
     assert failed_log.exists()  # implied below but nice to see
     assert "Attempting to upload logs. May fail" in failed_log.read_text()
 
-    # One more with a list as the shell
-    test.config["pre_shell"] = ["echo", "pre list"]
+    # With a dict (pre) and a list post
+    os.environ["TEST0"] = "env test"
+    test.config["pre_shell"] = {
+        "cmd": [
+            sys.executable,
+            "-c",
+            textwrap.dedent(
+                """
+                    import os, json
+                    res = {"TEST0":os.environ.get("TEST0","FAIL"),
+                           "TEST1":os.environ.get("TEST1","FAIL"),
+                           "cwd":os.getcwd(),}
+                    print(f"CAPTURE>>>{json.dumps(res)}<<<CAPTURE")
+                     """
+            ),
+        ],
+        "env": {"TEST1": "pre dict env"},
+        "cwd": os.path.expanduser("~"),
+    }
+
     test.config["post_shell"] = [sys.executable, "-c", 'print("post list")']
     test.write_config()
 
     test.write_pre("src/file.txt", "file..")
     test.cli("config.py")
+
     log = test.logs[-1][0]
+
+    # Post list cmd
     for txt in [
-        "['echo', 'pre list']",
-        "STDOUT: pre list",
         """'-c', 'print("post list")']""",
         "STDOUT: post list",
     ]:
         assert txt in log
+
+    # Pre dict cmd
+    matches = re.findall("CAPTURE>>>(.*?)<<<CAPTURE", log)
+    assert len(matches) == 2  # listing and then actual results
+    pre_dict = json.loads(matches[1])
+    assert pre_dict.pop("TEST0") == "env test"
+    assert pre_dict.pop("TEST1") == "pre dict env"
+    assert pre_dict.pop("cwd") == os.path.expanduser("~")
+    assert len(pre_dict) == 0  # Should be nothing left
 
 
 def test_dry_run():
@@ -670,11 +702,66 @@ def test_links(webdav):
         dwebdav.close()
 
 
+def test_dir_moves():
+
+    test = testutils.Tester(name="dirmove")
+
+    test.config["filter_flags"] = ["--exclude", "*.exc", "--exclude", "no/**"]
+    test.config["reuse_hashes"] = False
+    test.config["renames"] = "hash"
+    test.write_config()
+
+    test.write_pre("src/dir-move-all/file1.txt", "file.")
+    test.write_pre("src/dir-move-all/file2.txt", "file..")
+
+    test.write_pre("src/dir-move-all-replace/file3.txt", "file...")
+    test.write_pre("src/file4.txt", "file....")
+
+    test.write_pre("src/dir-move-some/file5.txt", "file.....")
+    test.write_pre("src/dir-move-some/file6-keep.txt", "file......")
+
+    test.write_pre("src/dir-move-exc/file7.txt", "file.......")
+    test.write_pre("src/dir-move-exc/file8.exc", "file........")
+
+    test.write_pre("src/dir-move-excdir/file9.txt", "file.........")
+    test.write_pre("src/dir-move-excdir/no/file10.txt", "file..........")
+    test.write_pre("src/dir-move-excdir/yes/file11.txt", "file...........")
+
+    test.write_pre("src/dir-move-withsub/file12.txt", "file............")
+    test.write_pre("src/dir-move-withsub/sub/file13.txt", "file.............")
+
+    test.cli("--init", "config.py")
+
+    assert test.compare_tree() == {
+        ("missing_in_dst", "dir-move-exc/file8.exc"),
+        ("missing_in_dst", "dir-move-excdir/no/file10.txt"),
+    }
+
+    shutil.move("src/dir-move-all", "src/dir-MOVED-all")
+
+    shutil.move("src/dir-move-all-replace/", "src/dir-MOVED-all-replace/")
+    test.move("src/file4.txt", "src/dir-move-all-replace/file4.txt")
+
+    test.move("src/dir-move-some/file5.txt", "src/dir-MOVED-some/file5.txt")
+
+    shutil.move("src/dir-move-exc/", "src/dir-MOVED-exc/")
+
+    shutil.move("src/dir-move-excdir/", "src/dir-MOVED-excdir/")
+
+    shutil.move("src/dir-move-withsub/", "src/dir-MOVED-withsub/")
+
+    test.cli("config.py")
+    assert test.compare_tree() == {
+        ("missing_in_dst", "dir-MOVED-exc/file8.exc"),
+        ("missing_in_dst", "dir-MOVED-excdir/no/file10.txt"),
+    }
+
+
 if __name__ == "__main__":
     # test_main()
     # test_missing_local_list()
-    for attrib in ("size", "mtime", "hash", "fail-hash", None):
-        test_dst_list(attrib)
+    # for attrib in ("size", "mtime", "hash", "fail-hash", None):
+    #     test_dst_list(attrib)
     # test_automatic_dst_list_and_prefix()
     # test_move_attribs()
     # test_log_dests()
@@ -687,4 +774,5 @@ if __name__ == "__main__":
     # test_override()
     # test_links(False)
     # test_links(True)
+    test_dir_moves()
     print("--- PASSED ---")

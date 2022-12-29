@@ -406,14 +406,11 @@ class Rclone:
                 cmd, stream=True,
             )
 
-    def rmdirs(self, *, curr, prev):
+    def rmdirs(self, *, curr_dirs, prev_dirs):
         if not self.config.cleanup_empty_dirs or (
             self.config.cleanup_empty_dirs == "auto" and not self.empty_dir_support()
         ):
             return
-
-        curr_dirs = {os.path.dirname(file) for file in curr}
-        prev_dirs = {os.path.dirname(file) for file in prev}
 
         rmdirs0 = prev_dirs - curr_dirs
 
@@ -576,8 +573,8 @@ class Rclone:
             stdout = subprocess.PIPE
             stderr = subprocess.STDOUT
         else:  # Stream to files to prevent a deadlock in the buffer
-            # Random names for concurrent calls. Use random integers 
-            rnd = int.from_bytes(os.urandom(6), "little") 
+            # Random names for concurrent calls. Use random integers
+            rnd = int.from_bytes(os.urandom(6), "little")
             stdout = open(f"{config.tmpdir}/std.{rnd}.out", mode="wb")
             stderr = open(f"{config.tmpdir}/std.{rnd}.err", mode="wb")
 

@@ -67,6 +67,10 @@ class RIRB:
 
         self.curr = cthread.join()
 
+        # Directories. Used in a few places
+        self.curr_dirs = {os.path.dirname(file) for file in self.curr}
+        self.prev_dirs = {os.path.dirname(file) for file in self.prev}
+
         self.compare()  # sets self.new, self.modified, self.deleted
         self.renames()  # sets self.renamed and updates self.new and self.deleted
 
@@ -107,7 +111,7 @@ class RIRB:
             curr=self.curr, new=self.new, modified=self.modified, prev=self.prev
         )
 
-        # Moves and deletes
+        # Moves and deletes (ay the file-by-file level)
         self.rclone.rename(self.renamed)
         self.rclone.delete(self.deleted)
 
@@ -116,7 +120,7 @@ class RIRB:
         if config.prefix_incomplete_backups:
             self.rclone.remove_prefix_diffs_backups(backup=bool(self.backup_list))
 
-        self.rclone.rmdirs(curr=self.curr, prev=self.prev)
+        self.rclone.rmdirs(curr_dirs=self.curr_dirs, prev_dirs=self.prev_dirs)
 
         log("Summary:")
         self.summary_text = self.summary()
@@ -327,24 +331,46 @@ def shell_runner(cmds, dry=False, env=None):
     """
     Run the shell command (string or list) and return the returncode
     """
+    environ = os.environ.copy()
+    if env:
+        environ.update(env)
+
+    kwargs = {}
+
     prefix = "DRY RUN " if dry else ""
     if isinstance(cmds, str):
         for line in cmds.rstrip().split("\n"):
             log(f"{prefix}$ {line}")
         shell = True
-    else:
+    elif isinstance(cmds, (list, tuple)):
         log(f"{prefix}{cmds}")
         shell = False
+    elif isinstance(cmds, dict):
+        log(f"{prefix}{cmds}")
+        cmds0 = cmds.copy()
+        try:
+            cmds = cmds0.pop("cmd")
+        except KeyError:
+            raise KeyError("Dict shell commands MUST have 'cmd' defined")
+        shell = cmds0.pop("shell", False)
+        environ.update(cmds0.pop("env", {}))
+        cmds0.pop("stdout", None)
+        cmds0.pop("stderr", None)
+        debug(f"Cleaned cmd: {cmds0}")
+        kwargs.update(cmds0)
+    else:
+        raise TypeError("Shell commands must be str, list/tuple, or dict")
 
     if dry:
         return log("DRY-RUN: Not running")
 
-    environ = os.environ.copy()
-    if env:
-        environ.update(env)
-
     proc = subprocess.Popen(
-        cmds, shell=shell, env=environ, stderr=subprocess.PIPE, stdout=subprocess.PIPE
+        cmds,
+        shell=shell,
+        env=environ,
+        stderr=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        **kwargs,
     )
 
     out, err = proc.communicate()

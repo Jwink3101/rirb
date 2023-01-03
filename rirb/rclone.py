@@ -589,7 +589,7 @@ class Rclone:
                         errors="backslashreplace"
                     )  # Allow for bad encoding
                     line = line.rstrip()
-                    log("rclone:", line)
+                    log(line,__prefix='rclone')
                     out.append(line)
             out = "\n".join(out)
             err = ""  # Piped to stderr
@@ -605,17 +605,17 @@ class Rclone:
             with open(stderr.name, "rt") as F:
                 err = F.read()
             if err and logstderr:
-                log(" rclone stderr:", err)
+                log(err,__prefix='rclone.stderr')
 
         if proc.returncode:
             if display_error:
-                log("RCLONE ERROR")
-                log("CMD", cmd)
+                log("RCLONE ERROR",__prefix='rclone')
+                log("CMD", cmd,__prefix='rclone')
                 if stream:
-                    log("STDOUT and STDERR", out)
+                    log(out,__prefix='rclone.std(out/err)')
                 else:
-                    log("STDOUT", out.strip())
-                    log("STDERR", err.strip())
+                    log("STDOUT", out.strip(),__prefix='rclone.stdout')
+                    log("STDERR", err.strip(),__prefix='rclone.stderr')
             raise subprocess.CalledProcessError(
                 proc.returncode, cmd, output=out, stderr=err
             )

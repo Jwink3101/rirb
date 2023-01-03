@@ -321,13 +321,13 @@ class RIRB:
         if not cmds:
             return
 
-        returncode = shell_runner(cmds, dry=dry, env={"STATS": stats})
+        returncode = shell_runner(cmds, dry=dry, env={"STATS": stats}, prefix=f'{mode}.shell')
 
         if returncode and self.config.stop_on_shell_error:
             raise subprocess.CalledProcessError(returncode, cmds)
 
 
-def shell_runner(cmds, dry=False, env=None):
+def shell_runner(cmds, dry=False, env=None, prefix=''):
     """
     Run the shell command (string or list) and return the returncode
     """
@@ -336,17 +336,20 @@ def shell_runner(cmds, dry=False, env=None):
         environ.update(env)
 
     kwargs = {}
-
-    prefix = "DRY RUN " if dry else ""
+    
+    prefix = [prefix] if prefix else []
+    if dry:
+        prefix.append('DRY-RUN')
+        
     if isinstance(cmds, str):
         for line in cmds.rstrip().split("\n"):
-            log(f"{prefix}$ {line}")
+            log(f"$ {line}",__prefix=prefix)
         shell = True
     elif isinstance(cmds, (list, tuple)):
-        log(f"{prefix}{cmds}")
+        log(f"{cmds}",__prefix=prefix)
         shell = False
     elif isinstance(cmds, dict):
-        log(f"{prefix}{cmds}")
+        log(f"{cmds}",__prefix=prefix)
         cmds0 = cmds.copy()
         try:
             cmds = cmds0.pop("cmd")
@@ -375,14 +378,16 @@ def shell_runner(cmds, dry=False, env=None):
 
     out, err = proc.communicate()
     out, err = out.decode(), err.decode()
-    for line in out.split("\n"):
-        log(f"STDOUT: {line}")
+    out = out.rstrip('\n')
+    err = err.rstrip('\n')
+    
+    log(f"{out}",__prefix=prefix + ['out'])
 
     if err.strip():
-        for line in err.split("\n"):
-            log(f"STDERR: {line}")
+        log(f"{err}",__prefix=prefix + ['err'])
+    
     if proc.returncode > 0:
-        log(f"WARNING: Command return non-zero returncode: {proc.returncode}")
+        log(f"WARNING: Command return non-zero returncode: {proc.returncode}",__prefix=prefix)
     return proc.returncode
 
 

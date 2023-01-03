@@ -162,7 +162,7 @@ log_dest = None
 # log_dest = "/full/path/to/local", "remote:path/to/log"
 
 ## Pre- and Post-run
-# Specify shell code to be evaluated before and/or after running syncrclone. Note
+# Specify shell code to be evaluated before and/or after running rirb. Note
 # these are all run from the directory of this config (as with everything else).
 # STDOUT and STDERR will be captured. Note that there is no validation or
 # security of the inputs. These are not actually called if using dry-run.

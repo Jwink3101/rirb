@@ -417,15 +417,15 @@ def test_shell():
 
     log = test.logs[-1][0]
     for txt in [
-        "STDOUT: PRE",
+        "pre.shell.out: PRE",
         '$ echo "PRE"',
         '$ echo "POST"',
-        "STDOUT: POST",
-        "STDOUT: Deleted: 0 files",  # stats
+        "post.shell.out: POST",
+        "post.shell.out: Deleted: 0 files",  # stats
         "WARNING: Command return non-zero returncode: 4",
-        "STDOUT: Elapsed Time:",
+        "post.shell.out: Elapsed Time:",
     ]:
-        assert txt in log
+        assert txt in log,f"Missing {txt}"
     assert Path("shell").read_text().strip() == "PRE\nPOST"
 
     # Do it again but do not allow errors
@@ -476,9 +476,9 @@ def test_shell():
     # Post list cmd
     for txt in [
         """'-c', 'print("post list")']""",
-        "STDOUT: post list",
+        "post.shell.out: post list",
     ]:
-        assert txt in log
+        assert txt in log,f'missing {txt}'
 
     # Pre dict cmd
     matches = re.findall("CAPTURE>>>(.*?)<<<CAPTURE", log)
@@ -529,10 +529,10 @@ def test_dry_run():
         "modified: 'new1.txt'",
         "deleted: 'del2.txt'",
         "rename: 'move1.txt' --> 'move2.txt'",
-        'DRY RUN $ echo "PRE"',
-        'DRY RUN $ echo "POST"',
+        'pre.shell.DRY-RUN: $ echo "PRE"',
+        'post.shell.DRY-RUN: $ echo "POST"',
     ]:
-        assert txt in log
+        assert txt in log,f"missing {txt}"
 
     assert not Path("shell").exists()  # should not have been run
 
@@ -758,7 +758,7 @@ def test_dir_moves():
 
 
 if __name__ == "__main__":
-    # test_main()
+    test_main()
     # test_missing_local_list()
     # for attrib in ("size", "mtime", "hash", "fail-hash", None):
     #     test_dst_list(attrib)
@@ -774,5 +774,5 @@ if __name__ == "__main__":
     # test_override()
     # test_links(False)
     # test_links(True)
-    test_dir_moves()
+    # test_dir_moves()
     print("--- PASSED ---")

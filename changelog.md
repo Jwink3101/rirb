@@ -2,6 +2,14 @@
 
 Newest on top
 
+## 20230103.0.BETA
+
+(minor)
+
+- Improved log inside the code
+- Code cleanup
+- documentation
+
 ## 20221229.0.BETA
 
 - Added the ability to specify `subprocess.Popen` flags for the pre/post/fail`_shell` values. ("`shell`" is now really a misnomer but I'll keep it).

@@ -57,7 +57,7 @@ Again, this is *probably* avoided but easy to implement incorrectly and you coul
 
 ## A Path Forward
 
-My current thinking, should I choose to implement this idea, is to do the "Parent at the *moved* directory" approach *and* require that the files be *exactly* the same (same file names, no mods, etc). However, if you even change one fire *while* moving it, this will break. It does fix the speed but becomes less useful since you need to have moved without also modifying any files. Again, a lot of conditions and edge cases
+My current thinking, should I choose to implement this idea, is to do the "Parent at the *moved* directory" approach *and* require that the files be *exactly* the same (same file names, no mods, etc). However, if you even change one file *while* moving it, this will break. It does fix the speed but becomes less useful since you need to have moved without also modifying any files. Again, a lot of conditions and edge cases
 
 ## Efficiency considerations
 

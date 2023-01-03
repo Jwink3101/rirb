@@ -131,11 +131,11 @@ def time_format(dt, upper=False):
 class Bunch(dict):
     """
     Based on sklearn's and the PyPI version, simple dict with 
-    dot notation
+    dot notation. To conver to dict, do dict(Bunch(...))
     """
 
-    def __init__(self, **kwargs):
-        super(Bunch, self).__init__(kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def __setattr__(self, key, value):
         self[key] = value
@@ -150,8 +150,7 @@ class Bunch(dict):
             raise AttributeError(key)
 
     def __repr__(self):
-        s = super(Bunch, self).__repr__()
-        return "Bunch(**{})".format(s)
+        return f"Bunch(**{super(Bunch, self).__repr__()})"
 
 
 class ReturnThread(Thread):
@@ -159,29 +158,23 @@ class ReturnThread(Thread):
     Like a regular thread except when you `join`, it returns the function
     result. And .start() will return itself to enable cleaner code.
     
-    Note that target is a required keyword argument. This is not inteded
-    to be subclassed like a regular thread
+        >>> mythread = ReturnThread(...).start() # instantiate and start
+    
+    Note that target is a required keyword argument.
     """
 
     def __init__(self, *, target, **kwargs):
         self.target = target
-        self.q = Queue()
         super().__init__(target=self._target, **kwargs)
+        self._res = None
 
     def start(self, *args, **kwargs):
-        """
-        Same as Thread.start() but returns self to enable things like:     
-            mythread = ReturnThread(...).start()
-        """
         super().start(*args, **kwargs)
         return self
 
     def _target(self, *args, **kwargs):
-        self.q.put(self.target(*args, **kwargs))
+        self._res = self.target(*args, **kwargs)
 
-    def join(self, **kwargs):
-        super().join(**kwargs)
-        res = self.q.get()
-        self.q.task_done()
-        self.q.join()
-        return res
+    def join(self, *args, **kwargs):
+        super().join(*args, **kwargs)
+        return self._res

@@ -6,11 +6,9 @@ Helper tool using rclone under-the-hood to make reverse-incremental backups.
 
 This mimics 
 
-    $ rclone sync source: dest:curr --backup-dir dest:back/<date>` 
+    $ rclone sync source: dest:curr --backup-dir dest:back/<date>
     
 but is faster since it stores the previous backup listing. It also keeps some additional data, automates saving logs, and uses a (more traceable and repeatable) configuration file.
-
-Because it stores diffs and other state information, full point-in-time recovery is possible, though that is *not* the indended use and can break. See [Restore Proof of Concept](restore_proof_of_concept/readme.md).
 
 Backups with rclone and/or rirb are not the most efficient, advanced, fast, featurefull, complete, sexy, or sophisticated. However, they are **simple, easy to use, easy to understand, easy to verify, easy to restore, and robust**. For backups, that is a great tradeoff.
 
@@ -26,6 +24,8 @@ This is a **HELPER** tool. It is not designed to do *everything* needed for back
 - **Verification / Repairs**: If the `curr` gets modified outside of this tool, you can run with `--dst-list`. Can also use `rclone check` (and/or `cryptcheck` to verify).
 - **Seeding Files**: Files can be seeded to the remote but then they must either be incorporated with `--dst-list` or be **manually** added to the `curr.json.xz`, preferably *with* hashes.
 - **Advanced recovery from interrupted state** - Interruptions can be recovered by running again with `--dst-list` mode. But if you need to recover from an interrupted state *before* it can be run again, it may need to be done manually with reading the backup file lists. Nothing is *EVER* deleted so all of the files are there, but may take a bit of work.
+
+Because it stores diffs and other state information, full point-in-time recovery is possible, though that is *not* the indended use and can break. See [Restore Proof of Concept](restore_proof_of_concept/readme.md).
 
 ## Why use this over rclone
 

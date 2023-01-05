@@ -2,6 +2,11 @@
 
 Newest on top
 
+## 20230105.0.BETA
+
+- Added an optimization to the move tracking execution. While not as optimized as full directory moving (which I contend has [too many edge cases](docs/Directory_Move_Optimization.md)), it batches moves within common directory paths when possible. This still requires rclone to make file moves (as opposed to directory moves) but it avoids duplicate checks and enables rclone's (superior) threading.
+- Minor code changes around `rclone.call()`
+
 ## 20230103.0.BETA
 
 (minor)

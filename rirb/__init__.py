@@ -1,4 +1,8 @@
-__version__ = "20230103.0.BETA"
+from threading import Lock
+
+LOCK = Lock()
+
+__version__ = "20230105.0.BETA"
 
 from . import cli
 

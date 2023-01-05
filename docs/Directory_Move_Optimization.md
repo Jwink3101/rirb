@@ -55,13 +55,17 @@ Consider the following. Note that even a single file move, if it's the only file
 
 Again, this is *probably* avoided but easy to implement incorrectly and you could end up breaking the transfer because you missed it and moved one sooner.
 
-## A Path Forward
+## A Path Forward -- Not used
 
 My current thinking, should I choose to implement this idea, is to do the "Parent at the *moved* directory" approach *and* require that the files be *exactly* the same (same file names, no mods, etc). However, if you even change one file *while* moving it, this will break. It does fix the speed but becomes less useful since you need to have moved without also modifying any files. Again, a lot of conditions and edge cases
 
 ## Efficiency considerations
 
 Another twist is efficiency of moving a few files vs a dir. For remotes that support it, it *may* be okay, though I am not sure what rclone does under the hood to validate the move (needs to make sure the dest isn't there?). For remotes that don't support it, rclone now has to do it itself. This is probably faster than how I can call it but may still be less efficient.
+
+## Current Optimization
+
+While directory moves remain too risky, the current approach is to batch common paths and use `rclone move` with  `--files-from`. Even if all files are listed to move, rclone still does it as a file-by-file move but it removes the overhead of checking destinations. In (limited) testing, this speeds up operations dramatically.
 
 ## Conclusion
 

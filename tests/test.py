@@ -425,7 +425,7 @@ def test_shell():
         "WARNING: Command return non-zero returncode: 4",
         "post.shell.out: Elapsed Time:",
     ]:
-        assert txt in log,f"Missing {txt}"
+        assert txt in log, f"Missing {txt}"
     assert Path("shell").read_text().strip() == "PRE\nPOST"
 
     # Do it again but do not allow errors
@@ -478,7 +478,7 @@ def test_shell():
         """'-c', 'print("post list")']""",
         "post.shell.out: post list",
     ]:
-        assert txt in log,f'missing {txt}'
+        assert txt in log, f"missing {txt}"
 
     # Pre dict cmd
     matches = re.findall("CAPTURE>>>(.*?)<<<CAPTURE", log)
@@ -532,7 +532,7 @@ def test_dry_run():
         'pre.shell.DRY-RUN: $ echo "PRE"',
         'post.shell.DRY-RUN: $ echo "POST"',
     ]:
-        assert txt in log,f"missing {txt}"
+        assert txt in log, f"missing {txt}"
 
     assert not Path("shell").exists()  # should not have been run
 
@@ -730,6 +730,14 @@ def test_dir_moves():
     test.write_pre("src/dir-move-withsub/file12.txt", "file............")
     test.write_pre("src/dir-move-withsub/sub/file13.txt", "file.............")
 
+    test.write_pre("src/sub1/sub2/sub3/sub4/sub5/file14.txt", f"file{'.'*14}")
+    test.write_pre("src/sub1/sub2/sub3/sub4/sub5/file15.txt", f"file{'.'*15}")
+
+    test.write_pre("src/s1/s2/s3/s4/s5/file16.txt", f"file{'.'*16}")
+    test.write_pre("src/s1/s2/s3/s4/s5/file17.txt", f"file{'.'*17}")
+
+    test.write_pre("src/D1/D2/file18.txt", f"file{'.'*18}")
+
     test.cli("--init", "config.py")
 
     assert test.compare_tree() == {
@@ -750,6 +758,12 @@ def test_dir_moves():
 
     shutil.move("src/dir-move-withsub/", "src/dir-MOVED-withsub/")
 
+    shutil.move("src/sub1/sub2/sub3/sub4/sub5/", "src/sub1/subTwo/subThree/sub4/sub5/")
+    shutil.move("src/s1/s2/s3/s4/s5/", "src/new/sub/")
+
+    Path("src/dd1/D2/").mkdir(parents=True, exist_ok=True)
+    shutil.move("src/D1/D2/file18.txt", "src/dd1/D2/file-18.txt")
+
     test.cli("config.py")
     assert test.compare_tree() == {
         ("missing_in_dst", "dir-MOVED-exc/file8.exc"),
@@ -758,7 +772,7 @@ def test_dir_moves():
 
 
 if __name__ == "__main__":
-    test_main()
+    # test_main()
     # test_missing_local_list()
     # for attrib in ("size", "mtime", "hash", "fail-hash", None):
     #     test_dst_list(attrib)
@@ -774,5 +788,5 @@ if __name__ == "__main__":
     # test_override()
     # test_links(False)
     # test_links(True)
-    # test_dir_moves()
+    test_dir_moves()
     print("--- PASSED ---")

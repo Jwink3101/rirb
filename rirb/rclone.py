@@ -9,6 +9,8 @@ from pathlib import Path
 import time
 import json
 import gzip as gz
+from collections import defaultdict
+from itertools import zip_longest
 
 from . import log, debug
 from . import utils
@@ -389,22 +391,98 @@ class Rclone:
         if not renames:
             return
         log(f"Renaming {len(renames)} files")
-        for sourcefile, destfile in renames:
+
+        # While we do not try to optimize for directory renames (too risky and too
+        # many edge cases), we do optimize the renames when (a) the file-name is the
+        # the same and (b) there is more than one at a base directory. Consider:
+        #
+        #   "A/deep/sub/dir/file1.txt" --> "A/deeper/sub/dir/file1.txt"
+        #   "A/deep/sub/dir/file2.txt" --> "A/deeper/sub/dir/file2.txt"
+        #
+        # The names ('file1.txt' and 'file2.txt') are the same and there are two moves
+        # from "A/deep" to "A/deeper". Therefore, rather than call moveto twice, we do:
+        #
+        #   rclone move "A/deep" "A/deeper" --files-from files.txt
+        #
+        # Where 'files.txt' is:
+        #    sub/dir/file1.txt
+        #    sub/dir/file2.txt"
+
+        moveto = []  # src,dst
+        move = defaultdict(list)
+
+        for src, dst in renames:
+            src, dst = Path(src), Path(dst)
+            sparts = src.parts
+            dparts = dst.parts
+
+            # Need to zip_longest so that if one is shorter, you don't exhaust the
+            # loop before ixdiv increments
+            for ixdiv, (spart, dpart) in enumerate(
+                zip_longest(sparts[::-1], dparts[::-1])
+            ):
+                if spart != dpart:
+                    break
+
+            if ixdiv == 0:  # different name. Must moveto
+                moveto.append((str(src), str(dst)))
+                continue
+
+            srcdir = os.path.join(*sparts[:-ixdiv]) if sparts[:-ixdiv] else ""
+            dstdir = os.path.join(*dparts[:-ixdiv]) if dparts[:-ixdiv] else ""
+            file = os.path.join(*sparts[-ixdiv:])  # == dparts[-ixdiv:]
+            # break
+            move[srcdir, dstdir].append(file)
+
+        # Now if only one item is being moved, we change it back to a moveto
+        # copy so I can modify move in place
+        for (srcdir, dstdir), files in move.copy().items():
+            if len(files) > 1:
+                continue
+            src = os.path.join(srcdir, files[0])
+            dst = os.path.join(dstdir, files[0])
+            moveto.append((src, dst))
+            del move[srcdir, dstdir]
+
+        debug(f"grouped moves moveto: {moveto}")
+        debug(f"grouped moves move: {dict(move)}")
+
+        flags = ["--log-level", "INFO"]  # same as -v
+        flags += ["--stats-one-line", "--log-format", ""]
+
+        # We know in all cases, the dest doesn't exists. So never check dest,
+        # always transfer, and do not traverse. I am NOT CERTAIN about whether
+        # --no-traverse is the right answer. It depends on how many files...
+        flags += ["--no-check-dest", "--ignore-times", "--no-traverse"]
+
+        for sourcefile, destfile in moveto:
             cmd = [
                 "moveto",
                 utils.pathjoin(self.destpath.curr, sourcefile),
                 utils.pathjoin(self.destpath.curr, destfile),
-            ]
-            cmd += ["-v", "--stats-one-line", "--log-format", ""]  # What to show
-
-            # We know in all cases, the dest doesn't exists. So never check dest,
-            # always transfer, and do not traverse
-            cmd += ["--no-check-dest", "--ignore-times", "--no-traverse"]
+            ] + flags
 
             log(f"Move {repr(sourcefile)} --> {repr(destfile)}")
-            self.call(
-                cmd, stream=True,
-            )
+            self.call(cmd, stream=True)
+
+        for ii, ((srcdir, dstdir), files) in enumerate(move.items()):
+
+            log(f"Grouped Move {repr(srcdir)} --> {repr(dstdir)}")
+            for file in files:
+                log(f"  {repr(file)}")
+
+            flistpath = self.config.tmpdir / f"move_{ii}.txt"
+            flistpath.write_text("\n".join(files))
+
+            cmd = [
+                "move",
+                utils.pathjoin(self.destpath.curr, srcdir),
+                utils.pathjoin(self.destpath.curr, dstdir),
+                "--files-from",
+                str(flistpath),
+            ] + flags
+
+            self.call(cmd, stream=True)
 
     def rmdirs(self, *, curr_dirs, prev_dirs):
         if not self.config.cleanup_empty_dirs or (
@@ -419,7 +497,8 @@ class Rclone:
         # and let that go deep
 
         cmd0 = ["rmdirs"]
-        cmd0 += ["-v", "--stats-one-line", "--log-format", ""]  # What to show
+        cmd0 += ["--log-level", "INFO"]  # same as -v
+        cmd0 += ["--stats-one-line", "--log-format", ""]
         cmd0 += ["--retries", "1"]
 
         rmdirs = []
@@ -573,10 +652,12 @@ class Rclone:
             stdout = subprocess.PIPE
             stderr = subprocess.STDOUT
         else:  # Stream to files to prevent a deadlock in the buffer
-            # Random names for concurrent calls. Use random integers
-            rnd = int.from_bytes(os.urandom(6), "little")
-            stdout = open(f"{config.tmpdir}/std.{rnd}.out", mode="wb")
-            stderr = open(f"{config.tmpdir}/std.{rnd}.err", mode="wb")
+            # Use time_ns() but make sure it increments, add a super short pause
+            # with a global lock (in reality, about 7µs)
+            utils.locked_pause(1e-6)
+            tns = time.time_ns()
+            stdout = open(f"{config.tmpdir}/std.{tns}.out", mode="wb")
+            stderr = open(f"{config.tmpdir}/std.{tns}.err", mode="wb")
 
         t0 = time.time()
         proc = subprocess.Popen(cmd, stdout=stdout, stderr=stderr, env=env)
@@ -589,7 +670,7 @@ class Rclone:
                         errors="backslashreplace"
                     )  # Allow for bad encoding
                     line = line.rstrip()
-                    log(line,__prefix='rclone')
+                    log(line, __prefix="rclone")
                     out.append(line)
             out = "\n".join(out)
             err = ""  # Piped to stderr
@@ -605,17 +686,17 @@ class Rclone:
             with open(stderr.name, "rt") as F:
                 err = F.read()
             if err and logstderr:
-                log(err,__prefix='rclone.stderr')
+                log(err, __prefix="rclone.stderr")
 
         if proc.returncode:
             if display_error:
-                log("RCLONE ERROR",__prefix='rclone')
-                log("CMD", cmd,__prefix='rclone')
+                log("RCLONE ERROR", __prefix="rclone")
+                log("CMD", cmd, __prefix="rclone")
                 if stream:
-                    log(out,__prefix='rclone.std(out/err)')
+                    log(out, __prefix="rclone.std(out/err)")
                 else:
-                    log("STDOUT", out.strip(),__prefix='rclone.stdout')
-                    log("STDERR", err.strip(),__prefix='rclone.stderr')
+                    log("STDOUT", out.strip(), __prefix="rclone.stdout")
+                    log("STDERR", err.strip(), __prefix="rclone.stderr")
             raise subprocess.CalledProcessError(
                 proc.returncode, cmd, output=out, stderr=err
             )

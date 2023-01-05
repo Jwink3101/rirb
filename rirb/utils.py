@@ -2,8 +2,9 @@ import datetime
 import os
 from threading import Thread
 from queue import Queue
+import time
 
-from . import log, debug
+from . import log, debug, LOCK
 
 
 def RFC3339_to_unix(timestr):
@@ -178,3 +179,12 @@ class ReturnThread(Thread):
     def join(self, *args, **kwargs):
         super().join(*args, **kwargs)
         return self._res
+
+
+def locked_pause(dt=1e-6):
+    """
+    Lock threads for a very short amount of time. Useful to make sure time_ns()
+    increments. Default is 2 microseconds
+    """
+    with LOCK:
+        time.sleep(dt)

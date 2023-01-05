@@ -5,16 +5,14 @@ from pathlib import Path
 import tempfile
 import argparse
 import shutil
-from threading import Lock
+
 import copy
 from functools import partial
 import io
 
-from . import __version__
+from . import __version__, LOCK
 
 _TEMPDIR = False  # Just used in testing
-
-LOCK = Lock()
 
 
 class Log:
@@ -39,40 +37,40 @@ class Log:
 
     def log(self, *args, **kwargs):
         """print() to the log with date"""
-        __prefix = kwargs.pop('__prefix','')
+        __prefix = kwargs.pop("__prefix", "")
         __debug = kwargs.pop("__debug", False)
         t = [time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime())]
         if __debug:
             t.append("DEBUG")
         if __prefix:
-            if isinstance(__prefix,list):
-                __prefix = '.'.join(p for p in __prefix if p)
+            if isinstance(__prefix, list):
+                __prefix = ".".join(p for p in __prefix if p)
             t.append(__prefix)
-        
-        t = '.'.join(t) + ': '
-        
+
+        t = ".".join(t) + ": "
+
         with io.StringIO() as sio:
             kwargs["file"] = sio
             kwargs["end"] = ""
-        
-            print(*args,**kwargs)
-        
+
+            print(*args, **kwargs)
+
             lines = sio.getvalue().split("\n")
             lines = [t + line for line in lines]
-        
-        lines = '\n'.join(lines)
-        
+
+        lines = "\n".join(lines)
+
         del kwargs["file"]
 
         with LOCK:  # Append should be atomic but just in case, lock it along with print
             if __debug:
                 with open(self.debug_file, mode="at") as fobj:
-                    print(lines,file=fobj)
+                    print(lines, file=fobj)
                 if self.debugmode:
                     print(lines)
             else:
                 with open(self.log_file, mode="at") as fobj:
-                    print(lines,file=fobj)
+                    print(lines, file=fobj)
                 print(lines)
 
     __call__ = log
@@ -157,8 +155,8 @@ class Config:
         # Passed to the config file
         self._config["os"] = os
         self._config["Path"] = Path
-        self._config["log"] = self._config["print"] = partial(log,__prefix='config')
-        self._config["debug"] = partial(debug,__prefix='config')
+        self._config["log"] = self._config["print"] = partial(log, __prefix="config")
+        self._config["debug"] = partial(debug, __prefix="config")
         self._config["print"] = log
         self._config["__file__"] = self.configpath.resolve()
         self._config["__dir__"] = self.configpath.parent.resolve()
@@ -176,7 +174,9 @@ class Config:
         ]
         self._config_keys.append("destpaths")
 
-        debug(f"""chdir from {repr(os.getcwd())}' to {repr(str(self._config["__dir__"]))}""")
+        debug(
+            f"""chdir from {repr(os.getcwd())}' to {repr(str(self._config["__dir__"]))}"""
+        )
 
         # Read then change dir
         config_txt = self.configpath.read_text()
@@ -371,7 +371,9 @@ def cli(argv=None):
                 "LOGPATH": str(log.log_file.resolve()),
                 "DEBUGPATH": str(log.debug_file.resolve()),
             }
-            shell_runner(config.fail_shell, dry=config.cliconfig.dry_run, env=env,prefix='fail')
+            shell_runner(
+                config.fail_shell, dry=config.cliconfig.dry_run, env=env, prefix="fail"
+            )
 
         log("Attempting to upload logs. May fail")
         rirb.savelog(fail=True)
@@ -380,3 +382,4 @@ def cli(argv=None):
             raise
 
         sys.exit(1)
+        return rirb

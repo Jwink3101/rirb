@@ -26,33 +26,33 @@ dst = "<<MUST SPECIFY>>"
 #     --include --exclude --include-from --exclude-from --filter --filter-from
 #     --exclude-if-present
 #
-# Must be specified as a list, e.g., ['--exclude','*.exc']
+# Must be specified as a list, e.g., ["--exclude","*.exc"]
 filter_flags = []
 
 # General rclone flags are called every time rclone is called. This is how
 # you can specify things like the conifg file.
 # Remember that this config is evaluated from its parent directory.
 #
-# Example: ['--config','path/to/config']
+# Example: ["--config", "path/to/config"]
 #
 # Note: Not all flags are compatible and may break the behavior, e.g. --progress
-# Flags related to links such as `--links` or `--copy-links` should go HERE
+# Flags related to links such as "--links", "--copy-links", or "--skip-links" go here.
 rclone_flags = []
 
 # The following are added to the existing environment.
 # These should NOT include any filtering!
 # Example: Getting config password
 #   > from getpass import getpass
-#   > rclone_env = {'RCLONE_CONFIG_PASS':getpass('Password: ')}
+#   > rclone_env = {"RCLONE_CONFIG_PASS": getpass("Password: ")}
 rclone_env = {}
 
 # Specify the attributes to decide if a source file is modified.
-#   'size'  : Did the size change. Acceptable but easy to have false negative
-#   'mtime' : Did the size and modification time change. Requires that source has
+#   "size"  : Did the size change. Acceptable but easy to have false negative
+#   "mtime" : Did the size and modification time change. Requires that source has
 #             ModTime. Can even use --use-server-modtime flags on the source
-#   'hash'  : Use the hash. Note that using 'hash' with `reuse_hashes = 'mtime'`
+#   "hash"  : Use the hash. Note that using 'hash' with `reuse_hashes = 'mtime'`
 #           : is *effectivly* still mtime
-compare = "mtime"  # 'size', 'mtime', 'hash'
+compare = "mtime"  # "size", "mtime", "hash"
 
 # Generally, comparisons are done from source-to-source but if run with --dst-list
 # mode, the destination is relisted and used for comparison. If the destination
@@ -136,8 +136,10 @@ hash_type = None
 get_hashes = False
 
 # Clean up newly empty directories on the destination. Set to True, False, or 'auto'. If
-# 'auto', will only do it for remotes that support empty directories
-cleanup_empty_dirs = "auto"
+# 'auto', will only do it for remotes that support empty directories.
+# Default is False since it speeds up the backup. If you need to restore and/or want to
+# clean up, you can separately run `rclone rmdirs dst:`
+cleanup_empty_dirs = False  # Options: {True, False, "auto"}
 
 # The `curr.json.gz` file on the destination is always current, but to save time,
 # a local copy of the current file listing can also be stored. This saves a bit
@@ -161,11 +163,15 @@ log_dest = None
 # log_dest = "/full/path/to/local"
 # log_dest = "/full/path/to/local", "remote:path/to/log"
 
-## Pre- and Post-run
+## Pre-, Post- and fail- shell commands to run
 # Specify shell code to be evaluated before and/or after running rirb. Note
 # these are all run from the directory of this config (as with everything else).
 # STDOUT and STDERR will be captured. Note that there is no validation or
 # security of the inputs. These are not actually called if using dry-run.
+#
+# The post shell call also has the "$STATS" environment variable defined which has
+# the run statistics including timing (which will be different than the final since
+# the logs will not yet have been dumped)
 #
 # Can be specified as the following:
 #
@@ -173,9 +179,18 @@ log_dest = None
 #              Can cd as needed and can be multiple lines and multiple commands.
 #     list   : Will execute with shell=False in the parent directory to this file.
 #     dict   : Specify subprocess.Popen flags plus the keyword 'cmd'. YOU decide if
-#              shell should be True or False based on 'cmd'. Will overwrite settings
-#              for std(out/err). Will update current environ with any 'env' settings.
+#              shell should be True or False based on 'cmd'. rirb will override settings
+#              for std(out/err). Will update os.environ with any 'env' settings.
 #
+# If the final cmd (specified directly as a list or a list inside the dict), each
+# command will be run through C-style formatting. C-Style is used to not break the
+# more-common str.format (or f-string) formats that may exist.
+# os.environ may be updated with `env` inside of a dict.
+#
+# Example:
+#   post_shell = 'echo "$STATS"'
+#   post_shell = ["echo","%(STATS)s"]
+# will look the same
 pre_shell = ""
 post_shell = ""
 

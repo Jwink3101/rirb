@@ -354,8 +354,8 @@ def cli(argv=None):
         # Delete the tempdir. This is ONLY done if run successfully!
         if not _TEMPDIR:  #  Do not do it while testing
             shutil.rmtree(log.tmpdir)
-
-        return rirb
+        else:
+            return rirb
 
     except Exception as E:
         log("ERROR: " + str(E), file=sys.stderr)
@@ -382,4 +382,3 @@ def cli(argv=None):
             raise
 
         sys.exit(1)
-        return rirb

@@ -371,6 +371,12 @@ def shell_runner(cmds, dry=False, env=None, prefix=""):
     if dry:
         return log("DRY-RUN: Not running")
 
+    if isinstance(cmds, (list, tuple)):
+        cmds0 = cmds.copy()
+        cmds = [cmd % environ for cmd in cmds]
+        if cmds != cmds0:
+            debug(f"Formatted cmds: {cmds}")
+
     proc = subprocess.Popen(
         cmds,
         shell=shell,

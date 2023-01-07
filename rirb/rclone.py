@@ -39,6 +39,7 @@ IGNORED_FILE_DATA = (
     "ID",
     "Tier",
 )
+MAX_CALL_LOG_LINES = 25  # Max number of lines on call() error
 
 
 class NoPreviousFileListError(ValueError):
@@ -252,7 +253,8 @@ class Rclone:
 
         # add_args (including --metadata) and rclone_flags will be added by call()
 
-        files = json.loads(self.call(cmd + config.filter_flags))
+        files = self.call(cmd + config.filter_flags)
+        files = json.loads(files)
         curr = self.file_list2dict(files)
         debug(f"Read {len(files)} files")
 
@@ -695,8 +697,21 @@ class Rclone:
                 if stream:
                     log(out, __prefix="rclone.std(out/err)")
                 else:
-                    log("STDOUT", out.strip(), __prefix="rclone.stdout")
-                    log("STDERR", err.strip(), __prefix="rclone.stderr")
+                    if (n := out.count("\n")) > MAX_CALL_LOG_LINES:
+                        log(
+                            f"**STDOUT is {n} lines. See {repr(stdout.name)} instead",
+                            __prefix="rclone.stdout",
+                        )
+                    else:
+                        log(out.strip(), __prefix="rclone.stdout")
+
+                    if (n := err.count("\n")) > MAX_CALL_LOG_LINES:
+                        log(
+                            f"**STDERR is {n} lines. See {repr(stderr.name)} instead",
+                            __prefix="rclone.stderr",
+                        )
+                    else:
+                        log(err.strip(), __prefix="rclone.stderr")
             raise subprocess.CalledProcessError(
                 proc.returncode, cmd, output=out, stderr=err
             )

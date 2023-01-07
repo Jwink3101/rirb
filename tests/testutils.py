@@ -234,6 +234,7 @@ class Tester:
     def make_ignore(self, file=".ignore"):
         ignore = self.pwd.parent / file
         if not ignore.exists():
+            self.pwd.parent.mkdir(exist_ok=True, parents=True)
             with ignore.open(mode="a"):
                 pass
 

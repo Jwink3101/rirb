@@ -2,6 +2,13 @@
 
 Newest on top
 
+## 20230107.0.BETA
+
+- Added C-Style formatting to pre-, post-, fail-shell commands when specified as a list or list inside a dict. Used C-Style to help reduce escaping needed of str.format and bracket.
+- Minor:
+    - Do not show something like "`<rirb.main.RIRB object at 0x7fd3980812e0>`" on exit
+    - If there is an error in rclone and there are more than 25 lines, do not log it.
+
 ## 20230105.0.BETA
 
 - Added an optimization to the move tracking execution. While not as optimized as full directory moving (which I contend has [too many edge cases](docs/Directory_Move_Optimization.md)), it batches moves within common directory paths when possible. This still requires rclone to make file moves (as opposed to directory moves) but it avoids duplicate checks and enables rclone's (superior) threading.

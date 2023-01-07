@@ -401,13 +401,12 @@ def test_shell():
     test = testutils.Tester(name="shell")
     test.config["pre_shell"] = """echo "PRE"\necho "PRE" > shell\n exit 4"""
     test.config["post_shell"] = """echo "POST"\necho "POST" >> shell\necho "$STATS" """
-    test.config["fail_shell"] = "\n".join(
-        [
-            'echo "FAIL"',
-            'echo "FAIL" >> shell',
-            'echo LOGS "$LOGPATH"',
-            'echo DEBUG "$DEBUGPATH"',
-        ]
+    test.config["fail_shell"] = textwrap.dedent(
+        """
+        echo "FAIL"
+        echo "FAIL" >> shell
+        echo LOGS "$LOGPATH"
+        echo DEBUG "$DEBUGPATH" """
     )
     test.config["stop_on_shell_error"] = False
     test.write_config()
@@ -465,7 +464,7 @@ def test_shell():
         "cwd": os.path.expanduser("~"),
     }
 
-    test.config["post_shell"] = [sys.executable, "-c", 'print("post list")']
+    test.config["post_shell"] = ["echo", "%(STATS)s" + "\n%(TEST0)s" + "\n%%(TEST1)s"]
     test.write_config()
 
     test.write_pre("src/file.txt", "file..")
@@ -475,8 +474,10 @@ def test_shell():
 
     # Post list cmd
     for txt in [
-        """'-c', 'print("post list")']""",
-        "post.shell.out: post list",
+        r"""post.shell: ['echo', '%(STATS)s\n%(TEST0)s\n%%(TEST1)s']""",  # command
+        "post.shell.out: Total",  # %(STATS)s
+        "post.shell.out: env test",  # %(TEST0)s
+        "post.shell.out: %(TEST1)s",  # %%(TEST1)s
     ]:
         assert txt in log, f"missing {txt}"
 
@@ -779,7 +780,7 @@ if __name__ == "__main__":
     # test_automatic_dst_list_and_prefix()
     # test_move_attribs()
     # test_log_dests()
-    # test_shell()
+    test_shell()
     # test_dry_run()
     # for mode in [True, False, "auto"]:
     #     test_dir_cleanup(mode)
@@ -788,5 +789,5 @@ if __name__ == "__main__":
     # test_override()
     # test_links(False)
     # test_links(True)
-    test_dir_moves()
+    # test_dir_moves()
     print("--- PASSED ---")

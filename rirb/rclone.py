@@ -74,6 +74,12 @@ class Rclone:
         # self.destpath.backup =
         self.call(["--version"], stream=True)
 
+        self.metadata = {
+            "timestamp": self.config.now,
+            "source": self.config.src,
+            "dest": self.config.dst,
+        }
+
     def pull_prev_list(self):
         config = self.config
 
@@ -565,9 +571,20 @@ class Rclone:
         if not backup:
             return
 
+        # We know these will be ordered since we are on later python
+        commented_backup = {
+            "__comments": [
+                f'Files in {repr(utils.pathjoin("back", self.config.now))}',
+                "This information may be incorrect if a prior run did not",
+                "complete. Manually examine files as needed",
+            ],
+            "__metadata": self.metadata,
+        }
+        commented_backup.update(backup)
+
         backup_list = self.tmpdir / "backed_up_files.json.gz"
         with gz.open(backup_list, "wt") as fobj:
-            json.dump(backup, fobj, indent=1, ensure_ascii=False)
+            json.dump(commented_backup, fobj, indent=1, ensure_ascii=False)
         cmd = [
             "copyto",
             str(backup_list),

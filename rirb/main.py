@@ -52,7 +52,7 @@ class RIRB:
 
         # Do this in its own thread so it can run at the same time as --dst-list.
         # Joined after listing dst
-        log(f"Generating source file list: {config.src}")
+        log(f"Generating source file list: {repr(config.src)}")
         cthread = ReturnThread(
             target=self.rclone.list_source, kwargs=dict(prev=self.loc_prev),
         ).start()
@@ -100,6 +100,8 @@ class RIRB:
         log("Actions:")
         for line in self.summary(actions=True):
             log(f"  {line}")
+
+        log(f"Uploading to: {repr(config.dst)}")
 
         # Upload the backed_up_files.json.gz and diffs.json.gz
         self.backup_list = self.build_backup_file_lists()
@@ -371,6 +373,8 @@ def shell_runner(cmds, dry=False, env=None, prefix=""):
     if dry:
         return log("DRY-RUN: Not running")
 
+    # Apply formatting. Uses the C-Style so that it is less likely to
+    # have to need escaping
     if isinstance(cmds, (list, tuple)):
         cmds0 = cmds.copy()
         cmds = [cmd % environ for cmd in cmds]

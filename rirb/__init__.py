@@ -2,7 +2,7 @@ from threading import Lock
 
 LOCK = Lock()
 
-__version__ = "20230107.0.BETA"
+__version__ = "20230115.0.BETA"
 
 from . import cli
 

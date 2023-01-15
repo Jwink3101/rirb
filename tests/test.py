@@ -120,6 +120,7 @@ def test_main():
     diffspath = Path(test.log_dirs()[-1]) / "diffs.json.gz"
     with gz.open(diffspath) as fobj:
         diffs = json.load(fobj)
+    diffs = {k: v for k, v in diffs.items() if not k.startswith("_")}
     assert diffs == {
         "deleted": ["delete.txt"],
         "modified": ["mod_diff_size.txt", "mod_same-size.txt"],
@@ -773,14 +774,14 @@ def test_dir_moves():
 
 
 if __name__ == "__main__":
-    # test_main()
+    test_main()
     # test_missing_local_list()
     # for attrib in ("size", "mtime", "hash", "fail-hash", None):
     #     test_dst_list(attrib)
     # test_automatic_dst_list_and_prefix()
     # test_move_attribs()
     # test_log_dests()
-    test_shell()
+    # test_shell()
     # test_dry_run()
     # for mode in [True, False, "auto"]:
     #     test_dir_cleanup(mode)

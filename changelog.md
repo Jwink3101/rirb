@@ -2,6 +2,10 @@
 
 Newest on top
 
+## 20230115.0.BETA
+
+- Added comments to `backed_up_files.json.gz` because the information could be wrong if the previous backup didn't complete or --dst-list after a change
+
 ## 20230107.0.BETA
 
 - Added C-Style formatting to pre-, post-, fail-shell commands when specified as a list or list inside a dict. Used C-Style to help reduce escaping needed of str.format and bracket.

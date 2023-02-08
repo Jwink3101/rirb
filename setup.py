@@ -13,7 +13,9 @@ setup(
     name="rirb",
     packages=["rirb"],
     long_description=open("readme.md").read(),
-    entry_points={"console_scripts": ["rirb=rirb.cli:cli"],},
+    entry_points={
+        "console_scripts": ["rirb=rirb.cli:cli"],
+    },
     version=rirb.__version__,
     description="Reverse Incremental Rclone Backup",
     url="https://github.com/Jwink3101/rirb/",

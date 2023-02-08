@@ -29,9 +29,9 @@ import pytest
 def test_main():
     """
     Many tests under one roof...
-    
+
     Tested things (Not exhaustive)
-    
+
     - copy, move, delete, update, backup
     - Filters
     - backup lists (including the right hash)
@@ -170,7 +170,7 @@ def test_missing_local_list():
 def test_dst_list(attrib):
     """
     Test using the dst_list.
-    
+
     attrib = 'fail-hash' will do 'hash' but withOUT computing them locally. This
     should fail!
     """
@@ -643,7 +643,7 @@ def test_override():
 @pytest.mark.parametrize("webdav", (True, False))
 def test_links(webdav):
     """
-    Test handling symlinks. Use the webdav server to test a remote that isn't 
+    Test handling symlinks. Use the webdav server to test a remote that isn't
     symlink aware
     """
 
@@ -705,7 +705,6 @@ def test_links(webdav):
 
 
 def test_dir_moves():
-
     test = testutils.Tester(name="dirmove")
 
     test.config["filter_flags"] = ["--exclude", "*.exc", "--exclude", "no/**"]
@@ -774,7 +773,7 @@ def test_dir_moves():
 
 
 if __name__ == "__main__":
-    test_main()
+    # test_main()
     # test_missing_local_list()
     # for attrib in ("size", "mtime", "hash", "fail-hash", None):
     #     test_dst_list(attrib)
@@ -782,7 +781,7 @@ if __name__ == "__main__":
     # test_move_attribs()
     # test_log_dests()
     # test_shell()
-    # test_dry_run()
+    test_dry_run()
     # for mode in [True, False, "auto"]:
     #     test_dir_cleanup(mode)
     # test_no_modtime()

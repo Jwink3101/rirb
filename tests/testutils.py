@@ -27,7 +27,6 @@ rirb.rclone._TESTMODE = True
 
 class WebDAV:
     def __init__(self, path, port=45678):
-
         self.path = path = os.path.abspath(path)
         self.remote = f":webdav,url='http://localhost:{int(port)}':"
 
@@ -156,7 +155,7 @@ class Tester:
 
     def write_post(self, path, content, mode="wt", add_dt=0):
         """
-        Write items randomly in the future. Can add even more if forcing 
+        Write items randomly in the future. Can add even more if forcing
         newer
         """
         dt = 5 * (1 + random.random()) + add_dt
@@ -190,8 +189,8 @@ class Tester:
 
         shutil.move(src, dst)
 
-    def compare_tree(self,):
-        """ All file systems are identical"""
+    def compare_tree(self):
+        """All file systems are identical"""
         src = "src"
         dst = "dst/curr"
         result = set()
@@ -201,7 +200,6 @@ class Tester:
 
         files = files_src.union(files_dst)
         for file in sorted(list(files), key=str.lower):
-
             file_src = os.path.join(src, file)
             file_dst = os.path.join(dst, file)
             try:
@@ -240,7 +238,7 @@ class Tester:
 
 
 def change_time(path, time_adj):
-    """ Change the time on a file path"""
+    """Change the time on a file path"""
     stat = os.stat(path)
     os.utime(path, (stat.st_atime + time_adj, stat.st_mtime + time_adj))
 

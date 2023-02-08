@@ -49,7 +49,7 @@ def pathjoin(*args):
     """
     This is like os.path.join but does some rclone-specific things because there could be
     a ':' in the first part.
-    
+
     The second argument could be '/file', or 'file' and the first could have a colon.
         pathjoin('a','b')   # a/b
         pathjoin('a:','b')  # a:b
@@ -92,11 +92,11 @@ def bytes2human(byte_count, base=1024, short=True):
 
     best = 0
     for ii in range(len(labels)):
-        if (byte_count / (base ** ii * 1.0)) < 1:
+        if (byte_count / (base**ii * 1.0)) < 1:
             break
         best = ii
 
-    return byte_count / (base ** best * 1.0), labels[best] + name
+    return byte_count / (base**best * 1.0), labels[best] + name
 
 
 def summary_text(files):
@@ -131,7 +131,7 @@ def time_format(dt, upper=False):
 
 class Bunch(dict):
     """
-    Based on sklearn's and the PyPI version, simple dict with 
+    Based on sklearn's and the PyPI version, simple dict with
     dot notation. To conver to dict, do dict(Bunch(...))
     """
 
@@ -158,9 +158,9 @@ class ReturnThread(Thread):
     """
     Like a regular thread except when you `join`, it returns the function
     result. And .start() will return itself to enable cleaner code.
-    
+
         >>> mythread = ReturnThread(...).start() # instantiate and start
-    
+
     Note that target is a required keyword argument.
     """
 
@@ -184,7 +184,7 @@ class ReturnThread(Thread):
 def locked_pause(dt=1e-6):
     """
     Lock threads for a very short amount of time. Useful to make sure time_ns()
-    increments. Default is 2 microseconds
+    increments. Default is 1 microsecond (µs).
     """
     with LOCK:
         time.sleep(dt)

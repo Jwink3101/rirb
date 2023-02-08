@@ -49,7 +49,7 @@ class NoPreviousFileListError(ValueError):
 class Rclone:
     """
     Main rclone interfacing object
-    
+
     config: config object for this run
     """
 
@@ -226,7 +226,11 @@ class Rclone:
         config = self.config
 
         compute_hashes = any(
-            [config.get_hashes, config.compare == "hash", config.renames == "hash",]
+            [
+                config.get_hashes,
+                config.compare == "hash",
+                config.renames == "hash",
+            ]
         )
 
         skip_modtime = not any(
@@ -474,7 +478,6 @@ class Rclone:
             self.call(cmd, stream=True)
 
         for ii, ((srcdir, dstdir), files) in enumerate(move.items()):
-
             log(f"Grouped Move {repr(srcdir)} --> {repr(dstdir)}")
             for file in files:
                 log(f"  {repr(file)}")
@@ -623,8 +626,8 @@ class Rclone:
 
     def empty_dir_support(self, remote=None):
         """
-        Return whether or not the remote supports 
-        
+        Return whether or not the remote supports
+
         Defaults to True since if it doesn't support them, calling rmdirs
         will just do nothing
         """
@@ -635,22 +638,24 @@ class Rclone:
 
         return features.get("Features", {}).get("CanHaveEmptyDirectories", True)
 
+    ### Interruption Checks. These are here since we use the rclone cache dir
     def init_check_interupt(self):
         """create the file and return whether or not it already exists"""
         statfile = self.local_cache_dir() / f"rirb/stat/{self.config._uuid}"
+        return statfile.exists()
+
+    def set_check_interupt(self):
+        statfile = self.local_cache_dir() / f"rirb/stat/{self.config._uuid}"
         statfile.parent.mkdir(exist_ok=True, parents=True)
         debug(f"writing interupt test file: {statfile}")
-        try:
-            statfile.touch(exist_ok=False)
-            return False
-        except OSError:
-            debug("interupt test file EXISTS!")
-            return True
+        statfile.touch(exist_ok=True)
 
     def end_check_interupt(self):
         statfile = self.local_cache_dir() / f"rirb/stat/{self.config._uuid}"
         statfile.unlink(missing_ok=True)
         debug(f"unlinking interupt test file: {statfile}")
+
+    ### /Interruption Checks
 
     def call(self, cmd, stream=False, logstderr=True, display_error=True):
         """

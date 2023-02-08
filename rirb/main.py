@@ -54,7 +54,8 @@ class RIRB:
         # Joined after listing dst
         log(f"Generating source file list: {repr(config.src)}")
         cthread = ReturnThread(
-            target=self.rclone.list_source, kwargs=dict(prev=self.loc_prev),
+            target=self.rclone.list_source,
+            kwargs=dict(prev=self.loc_prev),
         ).start()
 
         if config.cliconfig.dst_list:
@@ -81,6 +82,10 @@ class RIRB:
             self.diffs[name] = val
             debug(f"{name}: {val}")
 
+        log("Actions Summary:")
+        for line in self.summary(actions=True):
+            log(f"  {line}")
+
         if self.config.cliconfig.dry_run or self.config.cliconfig.interactive:
             log("Planned Actions")
             for name in ["new", "modified", "deleted"]:
@@ -93,15 +98,15 @@ class RIRB:
 
             if self.config.cliconfig.dry_run:
                 return self.run_shell(mode="post")
+
             cont = input("Would you like to continue? Y/[N]: ")
             if not cont.lower().startswith("y"):
                 return self.run_shell(mode="post")
 
-        log("Actions:")
-        for line in self.summary(actions=True):
-            log(f"  {line}")
+        # Now we start to modify the remote
+        self.rclone.set_check_interupt()
 
-        log(f"Uploading to: {repr(config.dst)}")
+        log(f"Uploading actions to: {repr(config.dst)}")
 
         # Upload the backed_up_files.json.gz and diffs.json.gz
         self.backup_list = self.build_backup_file_lists()
@@ -271,7 +276,7 @@ class RIRB:
     def file_compare(self, file, pfile, attrib):
         """
         Return whether the file is the same based on attrib.
-        
+
         May be used for compare or move tracking
         """
         if not attrib:

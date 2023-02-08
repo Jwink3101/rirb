@@ -2,6 +2,12 @@
 
 Newest on top
 
+## 20230108.0.BETA
+
+- Show summary for `--dry-run` and `--interactive`.
+- Fixed bug where a `--dry-run` or `--interactive` would incorrectly set the interrupt marker. Marker is also now set at a more appropriate time.
+- Code format with newer version of Python Black
+
 ## 20230115.0.BETA
 
 - Added comments to `backed_up_files.json.gz` because the information could be wrong if the previous backup didn't complete or --dst-list after a change

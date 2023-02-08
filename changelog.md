@@ -2,7 +2,7 @@
 
 Newest on top
 
-## 20230108.0.BETA
+## 20230208.0.BETA
 
 - Show summary for `--dry-run` and `--interactive`.
 - Fixed bug where a `--dry-run` or `--interactive` would incorrectly set the interrupt marker. Marker is also now set at a more appropriate time.
